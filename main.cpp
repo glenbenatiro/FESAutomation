@@ -38,7 +38,7 @@ using namespace std;
 
 class selectionMatrix {
 	public:
-		int x, y;
+		int x, y, xAbs, yAbs;
 };
 
 #include "ENV_VARS.h"
@@ -48,20 +48,16 @@ ofstream file;
 char name[50]; 							// to store name of test subject, also used as title of resulting .txt file 
 char temp[50]; 							// to temporarily store file of sprintf operations
 
-
+bool isElectrodeRead[COLUMNS][ROWS] = {0};
 double flexFlatMatrix[COLUMNS][ROWS];
 double flexRestMatrix[COLUMNS][ROWS];
 double flexFullMatrix[COLUMNS][ROWS];
 double flexProbability[COLUMNS][ROWS];
-
 double vFlexMatrix[COLUMNS][ROWS][TRIALS];
 double vPotMatrix[COLUMNS][ROWS][TRIALS];
-
 char startTime[30];
 char endTime[30];
-
 double arraySum;
-
 int electrodeOffset;
 
 // for AD
@@ -109,15 +105,16 @@ void init()
 			flexRestMatrix[c][d]    = 0;
 			flexFullMatrix[c][d] 	= 0;
 			flexProbability[c][d] 	= 0;
+			isElectrodeRead[c][d]	= 0;
 		}
 	}	
 				
 	// get name of subject
 	cls();
-	cout << "Subject name: ";
+	cout << "Subject  : ";
 	cin >> name;
-	cout << "Electrode 2 offset: ";
-	cin >> electrodeOffset;
+	cout << "E2 Offset: ";
+	cin >> electrodeOffset;	
 	
 	// store session start time
 	getTime(startTime);
@@ -161,29 +158,123 @@ void initAD()
 }
 
 
-void dataGatheringSession(selectionMatrix choice, string name)
+int dataGatheringSession(int x, int y)
 {
-	// ---init vars
-	int flag, count = 0;
-	char menuChoice;
+	// clear screen
+	cls();
 	
-	// temp storage for flexFlat and flexFull values for percentage calculation
-	double flexFlat, flexFull;
-	
-	// storage for raw vFlex and vPot values on realtime read
+	// init vars
+	int i = 0;
+	int breakFlag = 1;
+	char choice;
 	double vFlex_raw, vPot_raw;
+	double tempArr[9] = {};
+	// ---
 	
-	// readjust choice struct values
-	selectionMatrix arr;
-	arr.x = choice.x - 1;
-	arr.y = ((ROWS + 1) - choice.y) - 1;
+	// adjust y value to account for inverted matrix display
+	y = ROWS - y - 1;
+	
+	// at this point, x and y values are accurate, similar to actual location in data arrays
+	
+	// draw UI
+	xy(0,0); cout << "Cell " << char(65 + x) << y + 1 << " | Actual Array Values: " << x << "," << y;
+	xy(0,2); cout << "Bended :";
+	xy(0,3); cout << "Flat   :";
+	xy(0,4); cout << "Resting:";
+	xy(0,6); cout << "vFlex 1:";
+	xy(0,7); cout << "vPot  1:";
+	xy(0,9); cout << "vFlex 2:";
+	xy(0,10);cout << "vPot  2:";
+	xy(0,12);cout << "vFlex 3:";
+	xy(0,13);cout << "vPot  3:";
+	// --- 
 	
 	// turn on master switches on pins
 	ad2_enableMasterSwitches(true);
+		
+	while(breakFlag) {
+		
+		// update UI values while !kbhit()
+		while(!kbhit()) {
+			// read raw voltage value from flex sensor
+			vFlex_raw = ad2_readAnalogIOVoltage(FLEX_CHANNEL);
+			vPot_raw  = ad2_readAnalogIOVoltage(POT_CHANNEL);
+			
+			if(i <= 2) {
+				if(vFlex_raw >= 0) {
+					tempArr[i] = vFlex_raw;
+				}
+			} else if (i == 3 || i == 5 || i == 7) {
+				if(vFlex_raw >= 0)
+					tempArr[i] = vFlex_raw;
+				if(vPot_raw >= 0.1)
+					tempArr[i + 1] = vPot_raw;
+			}
+			
+			// draw voltage values
+			cout << fixed << setprecision(3);
+			xy(9,2);  cout << tempArr[0] << " V";
+			xy(9,3);  cout << tempArr[1] << " V";
+			xy(9,4);  cout << tempArr[2] << " V";	
+			xy(9,6);  cout << tempArr[3] << " V";
+			xy(9,7);  cout << tempArr[4] << " V";	
+			xy(9,9);  cout << tempArr[5] << " V";
+			xy(9,10); cout << tempArr[6] << " V";
+			xy(9,12); cout << tempArr[7] << " V";
+			xy(9,13); cout << tempArr[8] << " V";
+			// ---
+		}
+		
+		// check keyboard input after kbhit()
+		switch(choice = getch()) {
+			case BACKSPACE:
+				if(i == 0) {
+					breakFlag = 0;
+					return 0;
+				} else if(i == 1 || i == 2) {
+					tempArr[i] = 0;
+					i--;
+				} else if(i == 3 || i == 5 || i == 7 || i == 9) {
+					tempArr[i] = 0;
+					tempArr[i + 1] = 0;
+					
+					if(i == 3)
+						i--;
+					else
+						i -= 2;
+				}
+				break;
+ 
+			case ENTER:
+				if(i == 0 || i == 1 || i == 2) {
+					i++;
+				} else if(i == 3 || i == 5 || i == 7) {
+					i += 2;
+				} else if(i == 9) {
+					// turn off master switches on pins
+					ad2_enableMasterSwitches(false);
+					
+					flexFullMatrix[x][y] = tempArr[0];
+					flexFlatMatrix[x][y] = tempArr[1];
+					flexRestMatrix[x][y] = tempArr[2];
+					
+					for(int i = 0; i < 3; i++) {
+						vFlexMatrix[x][y][i] = tempArr[(i * 2) + 3];
+						vPotMatrix[x][y][i] = tempArr[(i * 2) + 4];
+					}
+					
+					flexProbability[x][y] = (((tempArr[2]-((tempArr[3]+tempArr[5]+tempArr[7])/3))/(tempArr[2]-tempArr[0]))*100);
+					isElectrodeRead[x][y] = 1;
+					breakFlag = 0;
+				}
+				break;
+				
+			default:
+				break;
+		}
+	}
 	
-	// get and store flex sensor values, both flat and fully bended
-	if(!getFlexSensorValues(arr.x, arr.y))
-		return;   	
+	return 1;
 }
 
 
@@ -199,28 +290,40 @@ void dataGathering()
 	
 	int xInit = 1;
 	int yInit = 1;
-	int xStep = 4;
+	int xStep = 6;
 	int yStep = 3;
 	int xMin = xInit;
 	int yMin = yInit;	
 	int xMax = ((COLUMNS - 1) * xStep) + xInit;
 	int yMax = ((ROWS - electrodeOffset) * yStep) + yInit;
+	int yPrev = yInit;
+	int xPrev = xInit;
 		
 	while(1) {
+		// draw electrode matrix UI
 		dataGathering_UI(xStep, yStep);
-		choice = navigator(xInit, yInit, xStep, yStep, xMin, yMin, xMax, yMax);
 		
-		if(choice.y == (ROWS - electrodeOffset + 1))
+		// draw isElectrodeFinished UI
+		isElectrodeRead_UI(xStep, yStep);
+		
+		// navigator function, returns relative electrode location starting at 0
+		choice = navigator(xPrev, yPrev, xStep, yStep, xMin, yMin, xMax, yMax, 1);
+		
+		// retain previous coordinate
+		xPrev = choice.xAbs;
+		yPrev = choice.yAbs;
+		
+		if(yPrev == yMax)
 			return;
 		else
-			dataGatheringSession(choice, name);
+			dataGatheringSession(choice.x, choice.y);
 	}
 }
 
 void saveToFile()
 {
 	cls();
-	
+	 
 	getTime(endTime);
 	generateHTMLFile();
 	sprintf(temp, "See %s_RESULTS.txt in file folder.", name);
@@ -233,6 +336,9 @@ void saveToFile()
 
 int main()
 {
+	// change cmd window title
+	system("title FES Data Gathering Automation v1.4");
+	
 	// change color 
 	system("color f0");
 	
@@ -250,15 +356,17 @@ int main()
 		// initialize some program parameters
 		init();
 		
-		// flag for program reset to change test subject and electrode 2
-		int flag = 0;
+		// init vars
+		int breakFlag = 0;
+		int yPrev = 3;
 		
 		// main loop
-		while(1) {
+		while(!breakFlag) {
 			// main menu
 			mainMenu_UI();
-			choice = navigator(1, 0, 0, 1, 1, 0, 1, 4); 
-			
+			choice = navigator(1, yPrev, 0, 1, 1, 3, 1, 7, 2); 
+			yPrev = choice.yAbs;
+					
 			switch(choice.y) {
 				case 1:
 					dataGathering();
@@ -271,8 +379,8 @@ int main()
 				case 3:
 					dataSeeder();
 					break;
-				case 4:
-					flag = 1;
+				case 4: // reset program
+					breakFlag = 1;
 					break;
 				case 5:
 					// close all opened devices
@@ -282,10 +390,7 @@ int main()
 				default:
 					break;
 			}
-		}
-		
-		if(flag)
-			break;		
+		}		
 	}
 
 }

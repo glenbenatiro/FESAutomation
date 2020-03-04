@@ -5,11 +5,14 @@ void mainMenu_UI()
 {
 	cls();
 	
-	cout << "[x] Gather data from " << name << "\n";
-	cout << "[ ] Export and show data" << "\n";
-	cout << "[ ] DEBUG: Populate file with random data" << "\n";
-	cout << "[ ] Reset program" << "\n"; 
-	cout << "[ ] Exit";
+	cout << "Subject  : " << name 					<< "\n";
+	cout << "E2 Offset: " << electrodeOffset 		<< "\n\n";	
+	
+	cout << "[ ] Gather data" 						<< "\n";
+	cout << "[ ] Export and show data" 				<< "\n";
+	cout << "[ ] DEBUG: Populate with random data"	<< "\n";
+	cout << "[ ] Reset program" 					<< "\n";
+	cout << "[ ] Exit"								<< "\n";
 }
 
 
@@ -44,9 +47,18 @@ void dataGathering_UI(int xStep, int yStep)
 			
 	xy((c * xStep), (r * yStep) + 1);
 	cout << "[ ]";
-	
-	xy(1, 1);
-	cout << "x";
+}
+
+void isElectrodeRead_UI(int xStep, int yStep)
+{
+	for(int c = 0; c < COLUMNS; c++) {
+		for(int r = 0; r < ROWS - electrodeOffset; r++) {
+			xy((c * xStep) + 3, (r * yStep));
+			if(isElectrodeRead[c][ROWS - 1 - r]) {
+				cout << "+";
+			}
+		}
+	}
 }
 
 
