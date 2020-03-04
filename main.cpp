@@ -264,6 +264,13 @@ int dataGatheringSession(int x, int y)
 					}
 					
 					flexProbability[x][y] = (((tempArr[2]-((tempArr[3]+tempArr[5]+tempArr[7])/3))/(tempArr[2]-tempArr[0]))*100);
+					
+					if(flexProbability[x][y] > 100) {
+						system("msg * Probability is greater than 100. You might want to retest.");
+					} else if(flexProbability[x][y] < 0) {
+						system("msg * Probability is lesser than 0. You might want to retest.");
+					}
+					
 					isElectrodeRead[x][y] = 1;
 					breakFlag = 0;
 				}
