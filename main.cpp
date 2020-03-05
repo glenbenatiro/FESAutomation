@@ -26,6 +26,7 @@
 #include <cmath> 
 #include "sample.h"
 #include <ctime> 
+#include <algorithm>
 
 #define KEY_UP 72
 #define KEY_DOWN 80
@@ -167,8 +168,10 @@ int dataGatheringSession(int x, int y)
 	int i = 0;
 	int breakFlag = 1;
 	char choice;
-	double vFlex_raw, vPot_raw;
+	double vFlex_raw, vPot_raw, restingRatio, trialAverage;
+	double tempVPot[501];
 	double tempArr[9] = {};
+	int count = 0;
 	// ---
 	
 	// adjust y value to account for inverted matrix display
@@ -187,6 +190,7 @@ int dataGatheringSession(int x, int y)
 	xy(0,10);cout << "vPot  2:";
 	xy(0,12);cout << "vFlex 3:";
 	xy(0,13);cout << "vPot  3:";
+	xy(0,15);cout << "Prob   :";
 	// --- 
 	
 	// turn on master switches on pins
@@ -198,17 +202,21 @@ int dataGatheringSession(int x, int y)
 		while(!kbhit()) {
 			// read raw voltage value from flex sensor
 			vFlex_raw = ad2_readAnalogIOVoltage(FLEX_CHANNEL);
-			vPot_raw  = ad2_readAnalogIOVoltage(POT_CHANNEL);
+			if(count <=500)
+				tempVPot[count++]  = ad2_readAnalogIOVoltage(POT_CHANNEL);
+			else
+				count = 0;
 			
 			if(i <= 2) {
-				if(vFlex_raw >= 0) {
+				if(ifsleep(0.1)) {
 					tempArr[i] = vFlex_raw;
 				}
 			} else if (i == 3 || i == 5 || i == 7) {
-				if(vFlex_raw >= 0)
+				if(ifsleep(0.1))
 					tempArr[i] = vFlex_raw;
-				if(vPot_raw >= 0.1)
-					tempArr[i + 1] = vPot_raw;
+				if(ifsleep(0.1)){
+					tempArr[i + 1] = *max_element(tempVPot , tempVPot + 500);
+				}
 			}
 			
 			// draw voltage values
@@ -222,6 +230,9 @@ int dataGatheringSession(int x, int y)
 			xy(9,10); cout << tempArr[6] << " V";
 			xy(9,12); cout << tempArr[7] << " V";
 			xy(9,13); cout << tempArr[8] << " V";
+			
+			
+			// hello world
 			// ---
 		}
 		
@@ -262,9 +273,11 @@ int dataGatheringSession(int x, int y)
 						vFlexMatrix[x][y][i] = tempArr[(i * 2) + 3];
 						vPotMatrix[x][y][i] = tempArr[(i * 2) + 4];
 					}
-					
-					flexProbability[x][y] = (((tempArr[2]-((tempArr[3]+tempArr[5]+tempArr[7])/3))/(tempArr[2]-tempArr[0]))*100);
-					
+					trialAverage = (tempArr[3]+tempArr[5]+tempArr[7])/3;
+//					flexProbability[x][y] = (((tempArr[2]-((tempArr[3]+tempArr[5]+tempArr[7])/3))/(tempArr[2]-tempArr[0]))*100);
+					flexProbability[x][y] = (trialAverage<tempArr[2])?((tempArr[2]-trialAverage)/((tempArr[2]-tempArr[0])/100)):((tempArr[2]-trialAverage)/((tempArr[1]-tempArr[2])/100));
+					xy(9,15); cout << flexProbability[x][y] << "\n";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+					system("pause");
 					if(flexProbability[x][y] > 100) {
 						system("msg * Probability is greater than 100. You might want to retest.");
 					} else if(flexProbability[x][y] < 0) {

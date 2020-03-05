@@ -4,10 +4,20 @@
 double ad2_readAnalogIOVoltage(int channel)
 {
 	double temp;
-	
 	FDwfAnalogInStatus(hdwf, false, NULL);
 	FDwfAnalogInStatusSample(hdwf, channel, &temp);
+	
 	return temp;
+}
+
+bool ifsleep(float seconds) {
+	bool res = false;
+    clock_t startClock = clock();
+    float secondsAhead = seconds * CLOCKS_PER_SEC;
+    // do nothing until the elapsed time has passed.
+    if (clock() < startClock + secondsAhead)
+    	res = true;
+    return res;
 }
 
 string rgb2hex(int r, int g, int b, bool with_head)
@@ -19,6 +29,10 @@ string rgb2hex(int r, int g, int b, bool with_head)
   return ss.str();
 }
 
+void extra()
+{
+	cout << "hello";
+}
 
 void cls()
 {
