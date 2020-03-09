@@ -73,6 +73,8 @@ int dDutyPlus = 0;
 int dSamples = 100;
 int cSamples;
 
+
+
 // class for getting x and y values in UI function
 selectionMatrix choice;
 
@@ -169,9 +171,10 @@ int dataGatheringSession(int x, int y)
 	int breakFlag = 1;
 	char choice;
 	double vFlex_raw, vPot_raw, restingRatio, trialAverage;
-	double tempVPot[501];
+	double tempVPot[500];
+	double tempVFlat = 0.0, tempVBend = 5.0;
 	double tempArr[9] = {};
-	int count = 0;
+	int potCount = 0, flexCount = 0;
 	// ---
 	
 	// adjust y value to account for inverted matrix display
@@ -202,20 +205,28 @@ int dataGatheringSession(int x, int y)
 		while(!kbhit()) {
 			// read raw voltage value from flex sensor
 			vFlex_raw = ad2_readAnalogIOVoltage(FLEX_CHANNEL);
-			if(count <=500)
-				tempVPot[count++]  = ad2_readAnalogIOVoltage(POT_CHANNEL);
+			if(potCount < 500)
+				tempVPot[potCount++]  = ad2_readAnalogIOVoltage(POT_CHANNEL);
 			else
-				count = 0;
+				potCount = 0;
 			
-			if(i <= 2) {
-				if(ifsleep(0.1)) {
+			if(i < 2) {
+						if(!i){
+							tempVBend = (tempVBend <= vFlex_raw)? tempVBend:vFlex_raw;
+							tempArr[i] = tempVBend;
+						}
+						else{
+							tempVFlat = (tempVFlat >= vFlex_raw)? tempVFlat:vFlex_raw;
+							tempArr[i] = tempVFlat;
+						}
+			} else if(i < 3){
+				if(ifsleep(0.1))
 					tempArr[i] = vFlex_raw;
-				}
 			} else if (i == 3 || i == 5 || i == 7) {
 				if(ifsleep(0.1))
 					tempArr[i] = vFlex_raw;
 				if(ifsleep(0.1)){
-					tempArr[i + 1] = *max_element(tempVPot , tempVPot + 500);
+					tempArr[i + 1] = *max_element(tempVPot , tempVPot + 499);
 				}
 			}
 			
