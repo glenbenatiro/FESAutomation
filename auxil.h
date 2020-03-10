@@ -214,7 +214,15 @@ void generateHTMLFile()
 		for(int c = 0; c < COLUMNS; c++) {
 			
 			// calculate color value
-			color = 255 - round(flexProbability[c][r]*2.55);
+			if(round(flexProbability[c][r] > 100) || round(flexProbability[c][r] < -100))
+				color = 175;
+			else if(flexProbability[c][r]<0)
+				color = 255 - round((flexProbability[c][r]+100)*2.55);
+			else if(flexProbability[c][r]<=100)
+				color = 255 - round(flexProbability[c][r]*2.55);
+			else if(flexProbability[c][r]<=200)
+				color = 255 - round((flexProbability[c][r]-100)*2.55);
+			
 			
 			// convert color value to hex
 			char buffer[10];
@@ -223,15 +231,21 @@ void generateHTMLFile()
 			// write code for cell color
 			file << "<td bgcolor=\"#";	
 			if(r > (electrodeOffset - 1)) {
-				if(round(flexProbability[c][r] > 100)) {
-					file << "ff80ff";
-				} else if(round(flexProbability[c][r]) < 0) {
-					file << "a0a0a0";
-				} else {
-					file << "ff";
+				if(round(flexProbability[c][r] > 100) || round(flexProbability[c][r] < -100)) {
 					file << buffer;
 					file << buffer;	
-				}
+					file << "ff";
+				} else if(round(flexProbability[c][r]) < 0) {
+					file << "ff";
+					file << buffer;
+					file << buffer;
+				} else if(round(flexProbability[c][r]) <= 100) {
+					file << buffer;
+					file << "ff";
+					file << buffer;	
+				} else
+					file << "c8c8c8";
+				
 		
 			} else if (r == (electrodeOffset - 1)) {
 				file << "c80000";
@@ -241,8 +255,12 @@ void generateHTMLFile()
 			file << "\">" << "\n";
 			
 			// write cell value
-			if(r > (electrodeOffset - 1))
-				file << round(flexProbability[c][r]);
+			if(r > (electrodeOffset - 1)){
+				if(flexProbability[c][r] != NULL)
+					file << round(flexProbability[c][r]);
+				else
+					file << "<b>N/A</b>";
+			}
 			else if(r == (electrodeOffset - 1))
 				file << "<b>-</b>";
 			else
@@ -330,7 +348,7 @@ void generateCSVFile()
 	
 	// open created .csv file
 	sprintf(fileName, "results\\%s_%d_CSV.csv", name, electrodeOffset);
-   	ShellExecute(NULL, "open", fileName, NULL, NULL, SW_SHOWNORMAL);
+   	//ShellExecute(NULL, "open", fileName, NULL, NULL, SW_SHOWNORMAL);
 }
 
 
@@ -368,7 +386,7 @@ void dataSeeder()
 {
 	for(int c = 0; c < COLUMNS; c++) {
 		for(int r = 0; r < ROWS; r++) {
-			flexProbability[c][r] = rand() % 100;
+			flexProbability[c][r] = rand() % 150 - rand() % 200;
 		}
 	}
 }

@@ -107,7 +107,7 @@ void init()
 			flexFlatMatrix[c][d] 	= 0;
 			flexRestMatrix[c][d]    = 0;
 			flexFullMatrix[c][d] 	= 0;
-			flexProbability[c][d] 	= 0;
+//			flexProbability[c][d] 	= 0;
 			isElectrodeRead[c][d]	= 0;
 		}
 	}	
