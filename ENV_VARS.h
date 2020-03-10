@@ -10,6 +10,7 @@
 
 
 
+
 // --- ANALOG DISCOVERY 2 ---
 // Analog I/O pin where flex sensor is connected
 int FLEX_CHANNEL = 0;

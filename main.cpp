@@ -66,12 +66,14 @@ HDWF hdwf;
 double hzSys;
 char szError[512] = { 0 };
 char szDeviceName[32];
-int dgIO1 = 4; // set digital pin 1
-int dgIO2 = 6; // set digital pin 2
-int dFreq = 10000;
-int dDutyPlus = 0;
-int dSamples = 100;
-int cSamples;
+
+//analog signal settings
+int analogChannel = 0;
+double aCarrierFreq = 10e3;
+double aCarrierAmp = 1.65;
+double aAMFreq = 50.0;
+int aAMAmp = 100;
+int aAMOffset = -100;
 
 // class for getting x and y values in UI function
 selectionMatrix choice;
@@ -105,7 +107,7 @@ void init()
 			flexFlatMatrix[c][d] 	= 0;
 			flexRestMatrix[c][d]    = 0;
 			flexFullMatrix[c][d] 	= 0;
-			flexProbability[c][d] 	= 0;
+//			flexProbability[c][d] 	= 0;
 			isElectrodeRead[c][d]	= 0;
 		}
 	}	
@@ -134,18 +136,18 @@ void initAD()
 	FDwfAnalogIOChannelNodeSet(hdwf, 0, 0, 1);
 	FDwfAnalogIOChannelNodeSet(hdwf, 0, 1, SUPPLY_VOLTAGE);
 
-	// configure 10kHz custom on IO pin 0
-	FDwfDigitalOutEnableSet(hdwf, dgIO1, true);
-    FDwfDigitalOutOutputSet(hdwf, dgIO1, DwfDigitalOutOutputThreeState);
-    FDwfDigitalOutTypeSet(hdwf, dgIO1, DwfDigitalOutTypeCustom);
-    FDwfDigitalOutIdleSet(hdwf, dgIO1, DwfDigitalOutIdleZet);
-    FDwfDigitalOutDividerSet(hdwf, dgIO1, hzSys / dFreq / 2);
-    FDwfDigitalOutDataSet(hdwf, dgIO1, rgcustom, 100 * 8);
-    
-    // configure 3.3V on IO pin 1
-    FDwfDigitalOutEnableSet(hdwf, dgIO2, true);
-    FDwfDigitalOutDividerSet(hdwf, dgIO2, hzSys / dFreq / dSamples);
-    FDwfDigitalOutCounterSet(hdwf, dgIO2, 0, 100);
+	FDwfAnalogOutCustomAMFMEnableSet(hdwf, analogChannel, true);
+    FDwfAnalogOutNodeEnableSet(hdwf, analogChannel, AnalogOutNodeCarrier, true);
+    FDwfAnalogOutNodeFunctionSet(hdwf, analogChannel, AnalogOutNodeCarrier, funcSquare);
+    FDwfAnalogOutNodeAmplitudeSet(hdwf, analogChannel, AnalogOutNodeCarrier, aCarrierAmp);
+    FDwfAnalogOutNodeFrequencySet(hdwf, analogChannel, AnalogOutNodeCarrier, aCarrierFreq);
+    FDwfAnalogOutNodeEnableSet(hdwf, analogChannel, AnalogOutNodeAM, true);
+    FDwfAnalogOutNodeFunctionSet(hdwf, analogChannel, AnalogOutNodeAM, funcPulse);
+    FDwfAnalogOutNodeAmplitudeSet(hdwf, analogChannel, AnalogOutNodeAM, aAMAmp);
+    FDwfAnalogOutNodeFrequencySet(hdwf, analogChannel, AnalogOutNodeAM, aAMFreq);
+    FDwfAnalogOutNodeOffsetSet(hdwf, analogChannel, AnalogOutNodeAM, aAMOffset);
+    FDwfAnalogOutConfigure(hdwf, analogChannel, true);
+
     
     // enable both analog channels
     FDwfAnalogInChannelEnableSet(hdwf, 0, true);
@@ -169,9 +171,10 @@ int dataGatheringSession(int x, int y)
 	int breakFlag = 1;
 	char choice;
 	double vFlex_raw, vPot_raw, restingRatio, trialAverage;
-	double tempVPot[501];
+	double tempVPot[500];
+	double tempVFlat = 0.0, tempVBend = 5.0;
 	double tempArr[9] = {};
-	int count = 0;
+	int potCount = 0, flexCount = 0;
 	// ---
 	
 	// adjust y value to account for inverted matrix display
@@ -192,30 +195,37 @@ int dataGatheringSession(int x, int y)
 	xy(0,13);cout << "vPot  3:";
 	xy(0,15);cout << "Prob   :";
 	// --- 
-	
 	// turn on master switches on pins
 	ad2_enableMasterSwitches(true);
+	Wait(0.2);
 		
 	while(breakFlag) {
-		
 		// update UI values while !kbhit()
 		while(!kbhit()) {
 			// read raw voltage value from flex sensor
 			vFlex_raw = ad2_readAnalogIOVoltage(FLEX_CHANNEL);
-			if(count <=500)
-				tempVPot[count++]  = ad2_readAnalogIOVoltage(POT_CHANNEL);
+			if(potCount < 500)
+				tempVPot[potCount++]  = ad2_readAnalogIOVoltage(POT_CHANNEL);
 			else
-				count = 0;
+				potCount = 0;
 			
-			if(i <= 2) {
-				if(ifsleep(0.1)) {
+			if(i < 2) {
+						if(!i){
+							tempVBend = (tempVBend < vFlex_raw)? tempVBend:vFlex_raw;
+							tempArr[i] = tempVBend;
+						}
+						else if(i){
+							tempVFlat = (tempVFlat > vFlex_raw)? tempVFlat:vFlex_raw;
+							tempArr[i] = tempVFlat;
+						}
+			} else if(i < 3){
+				if(ifsleep(0.1))
 					tempArr[i] = vFlex_raw;
-				}
 			} else if (i == 3 || i == 5 || i == 7) {
 				if(ifsleep(0.1))
 					tempArr[i] = vFlex_raw;
 				if(ifsleep(0.1)){
-					tempArr[i + 1] = *max_element(tempVPot , tempVPot + 500);
+					tempArr[i + 1] = *max_element(tempVPot , tempVPot + 499);
 				}
 			}
 			
@@ -274,7 +284,6 @@ int dataGatheringSession(int x, int y)
 						vPotMatrix[x][y][i] = tempArr[(i * 2) + 4];
 					}
 					trialAverage = (tempArr[3]+tempArr[5]+tempArr[7])/3;
-//					flexProbability[x][y] = (((tempArr[2]-((tempArr[3]+tempArr[5]+tempArr[7])/3))/(tempArr[2]-tempArr[0]))*100);
 					flexProbability[x][y] = (trialAverage<tempArr[2])?((tempArr[2]-trialAverage)/((tempArr[2]-tempArr[0])/100)):((tempArr[2]-trialAverage)/((tempArr[1]-tempArr[2])/100));
 					xy(9,15); cout << flexProbability[x][y] << "\n";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
 					system("pause");
@@ -283,7 +292,6 @@ int dataGatheringSession(int x, int y)
 					} else if(flexProbability[x][y] < 0) {
 						system("msg * Probability is lesser than 0. You might want to retest.");
 					}
-					
 					isElectrodeRead[x][y] = 1;
 					breakFlag = 0;
 				}
