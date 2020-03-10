@@ -1,16 +1,6 @@
 /*
- * This file is part of FES Automation program.
+ * FES Automation v1.46
  * Developed by Louille Glen Benatiro. 2020.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
  */
 
 #include <sstream>
@@ -53,7 +43,7 @@ bool isElectrodeRead[COLUMNS][ROWS] = {0};
 double flexFlatMatrix[COLUMNS][ROWS];
 double flexRestMatrix[COLUMNS][ROWS];
 double flexFullMatrix[COLUMNS][ROWS];
-double flexProbability[COLUMNS][ROWS];
+double flexBendingPercentage[COLUMNS][ROWS];
 double vFlexMatrix[COLUMNS][ROWS][TRIALS];
 double vPotMatrix[COLUMNS][ROWS][TRIALS];
 char startTime[30];
@@ -103,12 +93,11 @@ void init()
 				vFlexMatrix[c][d][t]= 0;	
 				vPotMatrix[c][d][t]	= 0;
 			}		
-			
-			flexFlatMatrix[c][d] 	= 0;
-			flexRestMatrix[c][d]    = 0;
-			flexFullMatrix[c][d] 	= 0;
-//			flexProbability[c][d] 	= 0;
-			isElectrodeRead[c][d]	= 0;
+			flexFlatMatrix[c][d] 		= 0;
+			flexRestMatrix[c][d]    	= 0;
+			flexFullMatrix[c][d] 		= 0;
+			flexBendingPercentage[c][d]	= 0;
+			isElectrodeRead[c][d]		= 0;
 		}
 	}	
 				
@@ -284,12 +273,12 @@ int dataGatheringSession(int x, int y)
 						vPotMatrix[x][y][i] = tempArr[(i * 2) + 4];
 					}
 					trialAverage = (tempArr[3]+tempArr[5]+tempArr[7])/3;
-					flexProbability[x][y] = (trialAverage<tempArr[2])?((tempArr[2]-trialAverage)/((tempArr[2]-tempArr[0])/100)):((tempArr[2]-trialAverage)/((tempArr[1]-tempArr[2])/100));
-					xy(9,15); cout << flexProbability[x][y] << "\n";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+					flexBendingPercentage[x][y] = (trialAverage<tempArr[2])?((tempArr[2]-trialAverage)/((tempArr[2]-tempArr[0])/100)):((tempArr[2]-trialAverage)/((tempArr[1]-tempArr[2])/100));
+					xy(9,15); cout << flexBendingPercentage[x][y] << "\n";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
 					system("pause");
-					if(flexProbability[x][y] > 100) {
+					if(flexBendingPercentage[x][y] > 100) {
 						system("msg * Probability is greater than 100. You might want to retest.");
-					} else if(flexProbability[x][y] < 0) {
+					} else if(flexBendingPercentage[x][y] < 0) {
 						system("msg * Probability is lesser than 0. You might want to retest.");
 					}
 					isElectrodeRead[x][y] = 1;
@@ -304,7 +293,6 @@ int dataGatheringSession(int x, int y)
 	
 	return 1;
 }
-
 
 void dataGathering()
 {
@@ -348,24 +336,10 @@ void dataGathering()
 	}
 }
 
-void saveToFile()
-{
-	cls();
-	 
-	getTime(endTime);
-	generateHTMLFile();
-	sprintf(temp, "See %s_RESULTS.txt in file folder.", name);
-	
-	cout << "Data exported." << endl;
-	cout << temp << endl << endl;
-	cout << "Press any key to go back...";
-	getch();
-}
-
 int main()
 {
 	// change cmd window title
-	system("title FES Data Gathering Automation v1.4");
+	system("title FES Data Gathering Automation v1.47");
 	
 	// change color 
 	system("color f0");
@@ -420,8 +394,4 @@ int main()
 			}
 		}		
 	}
-
 }
-
-
-

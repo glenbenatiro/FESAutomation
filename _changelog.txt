@@ -1,0 +1,29 @@
+1.46
+- changed 'flexProbability' to 'flexBendingPercentage'
+- changed 'flexBendingPercentage != NULL' to 'isElectrodeRead[c][r]' in writing results to HTML file
+- added isElectrodeRead[c][r] = true in dataSeeder function
+- removed saveToFile() function
+- changed 'results/*' to 'results/' in .gitignore
+- removed license declaration at main.cpp
+- code reformatting and cleanup
+
+
+1.43
+- fixed reset program not working
+- added an indication when electrode location has been finished reading
+- added subject and electrode offset display in main menu
+- changed navigator function, added return value modes (0: actual/absolute, 1: relative, starts at 0, 2: relative, starts at 1
+- removed press any key to continue when AD2 is detected 
+- changed matrix color to red (from green)
+- magenta if value is above 100, gray if value is below 0
+- last location used in UI navigation when going back (does not return to upper left location always)
+- AD2 circuity swithces turned off after storing data in actual data gathering (not turned off in previous vesions)
+- added actual array values display after selecting specific electrode
+- more comments
+- code reformatting, cleaner, shorter code
+
+1.42
+- changed code for more accurate vpot measurement
+
+1.41
+- added error message if probability is greater than 100 or lesser than 0, but value is still stored

@@ -1,6 +1,5 @@
 // UI.h
 
-
 void mainMenu_UI()
 {
 	cls();
@@ -14,7 +13,6 @@ void mainMenu_UI()
 	cout << "[ ] Reset program" 					<< "\n";
 	cout << "[ ] Exit"								<< "\n";
 }
-
 
 // draws electrode matrix UI
 void dataGathering_UI(int xStep, int yStep)
@@ -60,7 +58,6 @@ void isElectrodeRead_UI(int xStep, int yStep)
 		}
 	}
 }
-
 
 void dataGatheringSession_UI(double *Vpot, double *Vflex)
 {

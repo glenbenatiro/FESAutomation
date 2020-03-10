@@ -29,16 +29,10 @@ string rgb2hex(int r, int g, int b, bool with_head)
   return ss.str();
 }
 
-void extra()
-{
-	cout << "hello";
-}
-
 void cls()
 {
 	system("cls");
 }
-
 
 void xy(int x, int y)
 {
@@ -47,7 +41,6 @@ void xy(int x, int y)
 	coord.Y = y;
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
-
 
 // does navigation in any UI page
 selectionMatrix navigator(int xInit, int yInit, int xStep, int yStep, int xMin, int yMin, int xMax, int yMax, int mode)
@@ -214,14 +207,14 @@ void generateHTMLFile()
 		for(int c = 0; c < COLUMNS; c++) {
 			
 			// calculate color value
-			if(round(flexProbability[c][r] > 100) || round(flexProbability[c][r] < -100))
+			if(round(flexBendingPercentage[c][r] > 100) || round(flexBendingPercentage[c][r] < -100))
 				color = 175;
-			else if(flexProbability[c][r]<0)
-				color = 255 - round((flexProbability[c][r]+100)*2.55);
-			else if(flexProbability[c][r]<=100)
-				color = 255 - round(flexProbability[c][r]*2.55);
-			else if(flexProbability[c][r]<=200)
-				color = 255 - round((flexProbability[c][r]-100)*2.55);
+			else if(flexBendingPercentage[c][r]<0)
+				color = 255 - round((flexBendingPercentage[c][r]+100)*2.55);
+			else if(flexBendingPercentage[c][r]<=100)
+				color = 255 - round(flexBendingPercentage[c][r]*2.55);
+			else if(flexBendingPercentage[c][r]<=200)
+				color = 255 - round((flexBendingPercentage[c][r]-100)*2.55);
 			
 			
 			// convert color value to hex
@@ -231,15 +224,15 @@ void generateHTMLFile()
 			// write code for cell color
 			file << "<td bgcolor=\"#";	
 			if(r > (electrodeOffset - 1)) {
-				if(round(flexProbability[c][r] > 100) || round(flexProbability[c][r] < -100)) {
+				if(round(flexBendingPercentage[c][r] > 100) || round(flexBendingPercentage[c][r] < -100)) {
 					file << buffer;
 					file << buffer;	
 					file << "ff";
-				} else if(round(flexProbability[c][r]) < 0) {
+				} else if(round(flexBendingPercentage[c][r]) < 0) {
 					file << "ff";
 					file << buffer;
 					file << buffer;
-				} else if(round(flexProbability[c][r]) <= 100) {
+				} else if(round(flexBendingPercentage[c][r]) <= 100) {
 					file << buffer;
 					file << "ff";
 					file << buffer;	
@@ -256,8 +249,8 @@ void generateHTMLFile()
 			
 			// write cell value
 			if(r > (electrodeOffset - 1)){
-				if(flexProbability[c][r] != NULL)
-					file << round(flexProbability[c][r]);
+				if(isElectrodeRead[c][r])
+					file << round(flexBendingPercentage[c][r]);
 				else
 					file << "<b>N/A</b>";
 			}
@@ -329,7 +322,7 @@ void generateCSVFile()
 			file << "," << flexFlatMatrix[c][r] << ",";
 			file << flexRestMatrix[c][r] << ",";
 			file << flexFullMatrix[c][r] << ",,";
-			file << flexProbability[c][r] << ",";
+			file << flexBendingPercentage[c][r] << ",";
 			
 			file << "\n"; 
 		}
@@ -347,10 +340,9 @@ void generateCSVFile()
 	file.close();
 	
 	// open created .csv file
-	sprintf(fileName, "results\\%s_%d_CSV.csv", name, electrodeOffset);
-   	//ShellExecute(NULL, "open", fileName, NULL, NULL, SW_SHOWNORMAL);
+//	sprintf(fileName, "results\\%s_%d_CSV.csv", name, electrodeOffset);
+//	ShellExecute(NULL, "open", fileName, NULL, NULL, SW_SHOWNORMAL);
 }
-
 
 bool isADConnected()
 {
@@ -377,20 +369,16 @@ bool isADConnected()
     }
 }
 
-
-
-
-
-// --- function to fill flexProbability matrix with random values
+// --- function to fill flexBendingPercentage matrix with random values
 void dataSeeder()
 {
 	for(int c = 0; c < COLUMNS; c++) {
 		for(int r = 0; r < ROWS; r++) {
-			flexProbability[c][r] = rand() % 150 - rand() % 200;
+			isElectrodeRead[c][r] = true;
+			flexBendingPercentage[c][r] = rand() % 150 - rand() % 200;
 		}
 	}
 }
-
 
 void ad2_enableMasterSwitches(bool state)
 {
@@ -403,7 +391,6 @@ void ad2_enableMasterSwitches(bool state)
 	// master switch for digital outputs
 	FDwfDigitalOutConfigure(hdwf, state);
 }
-
 
 void getTime(char *timeVar)
 {
