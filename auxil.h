@@ -1,6 +1,42 @@
 // auxil.h
 
 // --- ANALOG DISCOVER 2 --- 
+void calcSFreq()
+{
+	int val, count = 0;
+	
+	// init sFreq values to zero
+	for(int i = 0; i < 5; i++)
+		sFreq[i] = 0;
+	
+	for(int c = 0; c < COLUMNS; c++) {
+		for(int r = ROWS - 1; r > electrodeOffset - 1; r--) {
+			
+			val = round(flexBendingPercentage[c][r]);
+			
+			// ---
+			if(val > 10){
+				sFreq[0]++;
+				if(val > 20){
+					sFreq[1]++;
+					if(val > 25){
+						sFreq[2]++;
+						if(val > 50){
+							sFreq[3]++;
+							if(val > 75){
+								sFreq[4]++;
+							}
+						}
+					}
+				}
+			}
+			// ---
+			
+			count++;
+		}
+	}
+}
+
 double ad2_readAnalogIOVoltage(int channel)
 {
 	double temp;
@@ -22,11 +58,14 @@ bool ifsleep(float seconds) {
 
 string rgb2hex(int r, int g, int b, bool with_head)
 {
-  std::stringstream ss;
-  if (with_head)
-    ss << "#";
-  ss << std::hex << (r << 16 | g << 8 | b );
-  return ss.str();
+	stringstream ss;
+	
+  	if (with_head)
+    	ss << "#";
+    
+	ss << hex << (r << 16 | g << 8 | b );
+
+	return ss.str();
 }
 
 void cls()
@@ -132,7 +171,6 @@ selectionMatrix navigator(int xInit, int yInit, int xStep, int yStep, int xMin, 
 	}
 }
 
-
 void generateHTMLFile()
 {
 	// init vars
@@ -205,45 +243,22 @@ void generateHTMLFile()
 		file << "<td>" << r + 1 << "</td>" << "\n";
 		
 		for(int c = 0; c < COLUMNS; c++) {
-			
-			// calculate color value
-			if(round(flexBendingPercentage[c][r] > 100) || round(flexBendingPercentage[c][r] < -100))
-				color = 175;
-			else if(flexBendingPercentage[c][r]<0)
-				color = 255 - round((flexBendingPercentage[c][r]+100)*2.55);
-			else if(flexBendingPercentage[c][r]<=100)
-				color = 255 - round(flexBendingPercentage[c][r]*2.55);
-			else if(flexBendingPercentage[c][r]<=200)
-				color = 255 - round((flexBendingPercentage[c][r]-100)*2.55);
-			
-			
-			// convert color value to hex
-			char buffer[10];
-			itoa(color, buffer, 16);
-			
-			// write code for cell color
-			file << "<td bgcolor=\"#";	
-			if(r > (electrodeOffset - 1)) {
-				if(round(flexBendingPercentage[c][r] > 100) || round(flexBendingPercentage[c][r] < -100)) {
-					file << buffer;
-					file << buffer;	
-					file << "ff";
-				} else if(round(flexBendingPercentage[c][r]) < 0) {
-					file << "ff";
-					file << buffer;
-					file << buffer;
-				} else if(round(flexBendingPercentage[c][r]) <= 100) {
-					file << buffer;
-					file << "ff";
-					file << buffer;	
-				} else
-					file << "c8c8c8";
 				
-		
+			// write code for cell color
+			file << "<td bgcolor=\"";
+			float tempVal = round(flexBendingPercentage[c][r]);
+			
+			if (r > (electrodeOffset - 1)) {
+				if(tempVal < 0 && tempVal >= -100)
+					file << rgb2hex(255, 255 - ((tempVal + 100) * 1.28), 255 - ((tempVal + 100) * 1.28), 1);	// shades of 'pastel' red for -1 to -100
+				else if(tempVal >= 0 && tempVal <= 100)
+					file << rgb2hex(255 - (tempVal * 1.28), 255, 255 - (tempVal * 1.28), 1);					// shades of 'pastel' green for 0 to 100
+				else 
+					file << rgb2hex(128, 128, 255, 1);															// pastel blue for all other
 			} else if (r == (electrodeOffset - 1)) {
-				file << "c80000";
+				file << rgb2hex(128, 128, 128, 1);	
 			} else {
-				file << "c8c8c8";
+				file << rgb2hex(128, 128, 128, 1);	
 			}
 			file << "\">" << "\n";
 			
@@ -252,7 +267,7 @@ void generateHTMLFile()
 				if(isElectrodeRead[c][r])
 					file << round(flexBendingPercentage[c][r]);
 				else
-					file << "<b>N/A</b>";
+					file << "-";
 			}
 			else if(r == (electrodeOffset - 1))
 				file << "<b>-</b>";
@@ -288,7 +303,6 @@ void generateHTMLFile()
 	sprintf(fileName, "results\\%s_%d_HTML.html", name, electrodeOffset);
    	ShellExecute(NULL, "open", fileName, NULL, NULL, SW_SHOWNORMAL);
 }
-
 
 void generateCSVFile()
 {
@@ -330,11 +344,11 @@ void generateCSVFile()
 		letter++;
 	}
 	
-	file << "\n";
-	file << "Subject:" << "," << name << ",,";
-	file << "Start time:" << "," << startTime << "\n";
-	file << "Electrode 2 location:" << "," << electrodeOffset << ",,";
-	file << "End time:" << "," << endTime << "\n";
+	file << "S.Freq 10%, S.Freq 20%, S.Freq 25%, S.Freq 50%, S.Freq 75%" << "\n";
+	file << sFreq[0] << "," << sFreq[1] << "," << sFreq[2] << "," << sFreq[3] << "," << sFreq[4] << "\n\n";
+	
+	file << "Name:," << name << ",," << "Start time:" << "," << startTime;
+	file << "Electrode 2 location:" << "," << electrodeOffset << ",," << "End time:" << "," << endTime;
 
 	// close file
 	file.close();
@@ -373,9 +387,9 @@ bool isADConnected()
 void dataSeeder()
 {
 	for(int c = 0; c < COLUMNS; c++) {
-		for(int r = 0; r < ROWS; r++) {
+		for(int r = electrodeOffset - 1; r < ROWS; r++) {
 			isElectrodeRead[c][r] = true;
-			flexBendingPercentage[c][r] = rand() % 150 - rand() % 200;
+			flexBendingPercentage[c][r] = rand() % 101;
 		}
 	}
 }
@@ -390,6 +404,9 @@ void ad2_enableMasterSwitches(bool state)
 	
 	// master switch for digital outputs
 	FDwfDigitalOutConfigure(hdwf, state);
+	
+	// switch for waveform generator output
+	FDwfAnalogOutConfigure(hdwf, 0, state);
 }
 
 void getTime(char *timeVar)

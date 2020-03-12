@@ -1,1 +1,5 @@
-results/
+# ignore files in results folder
+results/*
+
+# but please keep the folder
+!results/.keep

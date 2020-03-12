@@ -8,6 +8,7 @@ void mainMenu_UI()
 	cout << "E2 Offset: " << electrodeOffset 		<< "\n\n";	
 	
 	cout << "[ ] Gather data" 						<< "\n";
+	cout << "[ ] Delete data from specific location"<< "\n";
 	cout << "[ ] Export and show data" 				<< "\n";
 	cout << "[ ] DEBUG: Populate with random data"	<< "\n";
 	cout << "[ ] Reset program" 					<< "\n";

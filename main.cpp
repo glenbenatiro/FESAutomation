@@ -39,7 +39,9 @@ ofstream file;
 char name[50]; 							// to store name of test subject, also used as title of resulting .txt file 
 char temp[50]; 							// to temporarily store file of sprintf operations
 
-bool isElectrodeRead[COLUMNS][ROWS] = {0};
+int e2Size = 0;
+int sFreq[5];
+bool isElectrodeRead[COLUMNS][ROWS];
 double flexFlatMatrix[COLUMNS][ROWS];
 double flexRestMatrix[COLUMNS][ROWS];
 double flexFullMatrix[COLUMNS][ROWS];
@@ -76,6 +78,9 @@ selectionMatrix choice;
 
 void init()
 {
+	// init vars
+	int breakFlag = 0;
+	
 	cls();
 	
 	if(FLEX_CHANNEL == POT_CHANNEL) {
@@ -103,10 +108,28 @@ void init()
 				
 	// get name of subject
 	cls();
-	cout << "Subject  : ";
+	xy(0,0); cout << "Subject  : ";
 	cin >> name;
-	cout << "E2 Offset: ";
+	xy(0,1); cout << "E2 Offset: ";
 	cin >> electrodeOffset;	
+
+	
+	while(!breakFlag) {
+		
+		fflush(stdin);
+		
+		// clear line, 20 spaces
+		for(int i = 3; i < 23; i++) {
+			xy(i,3);
+			cout << " ";
+		}
+		
+		xy(0,3); cout << "Electrode 2 size (1 for small, 2 for big): ";
+		cin >> e2Size;	
+		
+		if(e2Size == 1 || e2Size == 2) 
+			breakFlag = 1;	
+	}
 	
 	// store session start time
 	getTime(startTime);
@@ -264,14 +287,17 @@ int dataGatheringSession(int x, int y)
 					// turn off master switches on pins
 					ad2_enableMasterSwitches(false);
 					
+					// store flat, bend, full flex sensor values
 					flexFullMatrix[x][y] = tempArr[0];
 					flexFlatMatrix[x][y] = tempArr[1];
 					flexRestMatrix[x][y] = tempArr[2];
 					
+					// store flex sensor and potentiometer voltage values
 					for(int i = 0; i < 3; i++) {
 						vFlexMatrix[x][y][i] = tempArr[(i * 2) + 3];
 						vPotMatrix[x][y][i] = tempArr[(i * 2) + 4];
 					}
+					
 					trialAverage = (tempArr[3]+tempArr[5]+tempArr[7])/3;
 					flexBendingPercentage[x][y] = (trialAverage<tempArr[2])?((tempArr[2]-trialAverage)/((tempArr[2]-tempArr[0])/100)):((tempArr[2]-trialAverage)/((tempArr[1]-tempArr[2])/100));
 					xy(9,15); cout << flexBendingPercentage[x][y] << "\n";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
@@ -281,6 +307,7 @@ int dataGatheringSession(int x, int y)
 					} else if(flexBendingPercentage[x][y] < 0) {
 						system("msg * Probability is lesser than 0. You might want to retest.");
 					}
+					
 					isElectrodeRead[x][y] = 1;
 					breakFlag = 0;
 				}
@@ -336,6 +363,56 @@ void dataGathering()
 	}
 }
 
+void delData()
+{
+	// init vars
+	int x, y;
+	int xInit = 1;
+	int yInit = 1;
+	int xStep = 6;
+	int yStep = 3;
+	int xMin = xInit;
+	int yMin = yInit;	
+	int xMax = ((COLUMNS - 1) * xStep) + xInit;
+	int yMax = ((ROWS - electrodeOffset) * yStep) + yInit;
+	int yPrev = yInit;
+	int xPrev = xInit;
+		
+	while(1) {
+		// draw electrode matrix UI
+		dataGathering_UI(xStep, yStep);
+		
+		// draw isElectrodeFinished UI
+		isElectrodeRead_UI(xStep, yStep);
+		
+		// navigator function, returns relative electrode location starting at 0
+		choice = navigator(xPrev, yPrev, xStep, yStep, xMin, yMin, xMax, yMax, 1);
+		
+		// retain previous coordinate
+		xPrev = choice.xAbs;
+		yPrev = choice.yAbs;
+		
+		if(yPrev == yMax)
+			return;
+		else {
+			x = choice.x;
+			y = ROWS - 1 - (choice.y);
+			
+			flexBendingPercentage[x][y] = 0;
+			flexFlatMatrix[x][y] = 0;
+			flexRestMatrix[x][y] = 0;
+			flexFullMatrix[x][y] = 0;
+			
+			for(int i = 0; i < 3; i++) {
+				vFlexMatrix[x][y][i] = 0;
+				vPotMatrix[x][y][i] = 0;
+			}
+			
+			isElectrodeRead[x][y] = false;
+		}
+	}
+}
+
 int main()
 {
 	// change cmd window title
@@ -366,7 +443,7 @@ int main()
 		while(!breakFlag) {
 			// main menu
 			mainMenu_UI();
-			choice = navigator(1, yPrev, 0, 1, 1, 3, 1, 7, 2); 
+			choice = navigator(1, yPrev, 0, 1, 1, 3, 1, 8, 2); 
 			yPrev = choice.yAbs;
 					
 			switch(choice.y) {
@@ -374,17 +451,36 @@ int main()
 					dataGathering();
 					break;
 				case 2:
+					delData();
+					break;
+				case 3:
 					getTime(endTime);
+					
+					if(e2Size == 2) {
+						for(int c = 0; c <= (COLUMNS - 2); c += 2) {
+							for(int r = ROWS - 1; r > electrodeOffset - 1; r -= 2) {
+								flexBendingPercentage[c + 1][r] 	= flexBendingPercentage[c][r];
+								flexBendingPercentage[c][r - 1] 	= flexBendingPercentage[c][r];	
+								flexBendingPercentage[c + 1][r - 1] = flexBendingPercentage[c][r];
+								
+								isElectrodeRead[c + 1][r] = true;
+								isElectrodeRead[c][r - 1] = true;
+								isElectrodeRead[c + 1][r - 1] = true;
+							}
+						}
+					}
+					
+					calcSFreq();
 					generateHTMLFile();
 					generateCSVFile();
 					break;
-				case 3:
+				case 4:
 					dataSeeder();
 					break;
-				case 4: // reset program
+				case 5: // reset program
 					breakFlag = 1;
 					break;
-				case 5:
+				case 6:
 					// close all opened devices
 					FDwfDeviceCloseAll();
 					exit(0);

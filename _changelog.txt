@@ -1,3 +1,17 @@
+1.47
+- !CAUTION: please use program as is, no error traps in program yet
+- added functionality: delete data from a specific location
+- added functionality: add calculation for middle finger s. freq, posted in .csv file 
+- added functionality: select electrode size. if size is big, copy flexBendingPercentage data to adjacent locations to suffice 2x2 size. also reflected in heatmap and csv (flexBendingPercentage alone for now!)
+- turned off stimulation signals from AD2 when exiting data gathering session (not turned off in previous versions)
+- changed 'N/A' in heatmap to '-' for unstimulated locations
+- fixed wrong color (yellow or orange instead of shades of red) in HTML heatmap output
+- changed color scheme: 0 to 100 is green, -1 to -100 is red, else is blue
+- changed code for calculating and writing color in HTML file; shorter, cleaner, more precise code
+- added code to retain 'results' folder, but doesn't include files inside 'results' during commit
+- removed 'manuals' folder to lessen package size
+
+
 1.46
 - changed 'flexProbability' to 'flexBendingPercentage'
 - changed 'flexBendingPercentage != NULL' to 'isElectrodeRead[c][r]' in writing results to HTML file
@@ -27,3 +41,6 @@
 
 1.41
 - added error message if probability is greater than 100 or lesser than 0, but value is still stored
+
+
+
