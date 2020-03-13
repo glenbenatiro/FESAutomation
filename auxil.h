@@ -35,6 +35,13 @@ void calcSFreq()
 			count++;
 		}
 	}
+	
+	// if electrode size if big, only 1 value is counted per big location
+	if(e2Size == 2) {
+		for(int i = 0; i < 5; i++) {
+			sFreq[i] /= 4;
+		}
+	}
 }
 
 double ad2_readAnalogIOVoltage(int channel)
@@ -226,9 +233,16 @@ void generateHTMLFile()
 	sprintf(temp, "Heat Map of %s", name);
 	file << temp;
 	file << "<br><br>" 						<< "\n";
+	file << "Electrode size: ";
+	if(e2Size == 1) {
+		file << "Small (2cm x 2cm)";
+	} else if ( e2Size == 2) {
+		file << "Big (3.9cm x 3.9cm)";
+	}
+	file << "\n" << "<br>" << "\n";
 	sprintf(temp, "Start time: %s", startTime);
 	file << temp;
-	file << "<br>" 							<< "\n";
+	file << "<br>"<< "\n";
 	sprintf(temp, "End time: %s", endTime);
 	file << temp;
 	file << "<br><br>" 						<< "\n";

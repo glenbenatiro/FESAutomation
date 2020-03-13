@@ -1,3 +1,10 @@
+1.48
+- issue fix: 0 is copied even though head electrode not read when electrode size is big
+- issue fix: correct statistical frequency of finger bendings when electrode size is big (every big location counted as 1 value, not 4)
+- added electrode size in HTML heatmap
+
+
+
 1.47
 - !CAUTION: please use program as is, no error traps in program yet
 - added functionality: delete data from a specific location

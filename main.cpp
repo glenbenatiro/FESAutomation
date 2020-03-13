@@ -1,5 +1,5 @@
 /*
- * FES Automation v1.46
+ * FES Automation v1.48
  * Developed by Louille Glen Benatiro. 2020.
  */
 
@@ -416,7 +416,7 @@ void delData()
 int main()
 {
 	// change cmd window title
-	system("title FES Data Gathering Automation v1.47");
+	system("title FES Data Gathering Automation v1.48");
 	
 	// change color 
 	system("color f0");
@@ -459,13 +459,15 @@ int main()
 					if(e2Size == 2) {
 						for(int c = 0; c <= (COLUMNS - 2); c += 2) {
 							for(int r = ROWS - 1; r > electrodeOffset - 1; r -= 2) {
-								flexBendingPercentage[c + 1][r] 	= flexBendingPercentage[c][r];
-								flexBendingPercentage[c][r - 1] 	= flexBendingPercentage[c][r];	
-								flexBendingPercentage[c + 1][r - 1] = flexBendingPercentage[c][r];
-								
-								isElectrodeRead[c + 1][r] = true;
-								isElectrodeRead[c][r - 1] = true;
-								isElectrodeRead[c + 1][r - 1] = true;
+								if(isElectrodeRead[c][r]) {
+									flexBendingPercentage[c + 1][r] 	= flexBendingPercentage[c][r];
+									flexBendingPercentage[c][r - 1] 	= flexBendingPercentage[c][r];	
+									flexBendingPercentage[c + 1][r - 1] = flexBendingPercentage[c][r];
+									
+									isElectrodeRead[c + 1][r] = true;
+									isElectrodeRead[c][r - 1] = true;
+									isElectrodeRead[c + 1][r - 1] = true;
+								}
 							}
 						}
 					}
