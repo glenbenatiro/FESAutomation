@@ -186,7 +186,7 @@ void generateHTMLFile()
 	
 	// create and open html file for writing
 	char fileName[50];
-	sprintf(fileName, "results/%s_%d_HTML.html", name, electrodeOffset);
+	sprintf(fileName, "results/html/%s_%d_HTML.html", name, electrodeOffset);
 	file.open(fileName);
 
 	// HTML CODE START
@@ -325,7 +325,7 @@ void generateCSVFile()
 	char letter = 'A';
 	
 	// create file then open	
-	sprintf(fileName, "results/%s_%d_CSV.csv", name, electrodeOffset);
+	sprintf(fileName, "results/csv/%s_%d_CSV.csv", name, electrodeOffset);
 	file.open(fileName);
 	
 	// write column headings to file

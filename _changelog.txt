@@ -1,12 +1,21 @@
+FES Automation Changelog
+
+!CAUTION: Please use program as is, no error traps in program yet. !
+
+
+1.49
+- sorted out csv and html result files to different folders
+- added code in gitignore to accommodate change and added .keep files in results/csv and results/html
+
+
 1.48
+- !CAUTION: please use program as is, no error traps in program yet
 - issue fix: 0 is copied even though head electrode not read when electrode size is big
 - issue fix: correct statistical frequency of finger bendings when electrode size is big (every big location counted as 1 value, not 4)
 - added electrode size in HTML heatmap
 
 
-
 1.47
-- !CAUTION: please use program as is, no error traps in program yet
 - added functionality: delete data from a specific location
 - added functionality: add calculation for middle finger s. freq, posted in .csv file 
 - added functionality: select electrode size. if size is big, copy flexBendingPercentage data to adjacent locations to suffice 2x2 size. also reflected in heatmap and csv (flexBendingPercentage alone for now!)
@@ -43,8 +52,10 @@
 - more comments
 - code reformatting, cleaner, shorter code
 
+
 1.42
 - changed code for more accurate vpot measurement
+
 
 1.41
 - added error message if probability is greater than 100 or lesser than 0, but value is still stored

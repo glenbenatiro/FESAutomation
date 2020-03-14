@@ -1,5 +1,5 @@
 /*
- * FES Automation v1.48
+ * FES Automation
  * Developed by Louille Glen Benatiro. 2020.
  */
 
@@ -416,7 +416,7 @@ void delData()
 int main()
 {
 	// change cmd window title
-	system("title FES Data Gathering Automation v1.48");
+	system("title FES Data Gathering Automation v1.49");
 	
 	// change color 
 	system("color f0");

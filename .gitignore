@@ -1,5 +1,8 @@
 # ignore files in results folder
-results/*
+results/csv/*
+results/html/*
 
 # but please keep the folder
 !results/.keep
+!results/csv/.keep
+!results/html/.keep
