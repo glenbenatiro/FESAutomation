@@ -408,6 +408,17 @@ void dataSeeder()
 	}
 }
 
+void rampUpDown(float seconds, unsigned char* rampDirection)
+{
+	// switch for waveform generator output
+	FDwfAnalogOutConfigure(hdwf, analogChannel, true);
+	for (int i = 0; i <= steps; i++) {
+        FDwfDigitalSpiWrite(hdwf, 0, 8, rampDirection, 1);
+        Sleep(seconds / steps);
+    }
+}
+
+
 void ad2_enableMasterSwitches(bool state)
 {
 	// start/stop acquisition

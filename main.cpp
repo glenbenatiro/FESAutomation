@@ -53,6 +53,16 @@ char endTime[30];
 double arraySum;
 int electrodeOffset;
 
+//digital potentiometer settings
+int dioCS = 0;
+int dioSCK = 1;
+int dioSDIO = 2;
+double steps = 256;
+float seconds;
+unsigned char increment[1] = { 0x04 }, decrement[1] = { 0x08 };
+unsigned short zero[1] = { 0x0000 };
+
+
 // for AD
 HDWF hdwf;
 double hzSys;
@@ -138,16 +148,13 @@ void init()
 
 void initAD()
 {
-	BYTE rgcustom[100] = { 0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE
-                                    ,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE
-                                    ,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE,0xEE };
-	
 	FDwfDigitalOutInternalClockInfo(hdwf, &hzSys);
 	
 	// enable and set supply channel to 5V
 	FDwfAnalogIOChannelNodeSet(hdwf, 0, 0, 1);
 	FDwfAnalogIOChannelNodeSet(hdwf, 0, 1, SUPPLY_VOLTAGE);
-
+	
+	FDwfAnalogIOEnableSet(hdwf, true);
 	FDwfAnalogOutCustomAMFMEnableSet(hdwf, analogChannel, true);
     FDwfAnalogOutNodeEnableSet(hdwf, analogChannel, AnalogOutNodeCarrier, true);
     FDwfAnalogOutNodeFunctionSet(hdwf, analogChannel, AnalogOutNodeCarrier, funcSquare);
@@ -159,7 +166,17 @@ void initAD()
     FDwfAnalogOutNodeFrequencySet(hdwf, analogChannel, AnalogOutNodeAM, aAMFreq);
     FDwfAnalogOutNodeOffsetSet(hdwf, analogChannel, AnalogOutNodeAM, aAMOffset);
     FDwfAnalogOutConfigure(hdwf, analogChannel, true);
-
+    
+    // configure SPI on AD2
+    FDwfDigitalSpiReset(hdwf);
+    FDwfDigitalSpiFrequencySet(hdwf, 9600);
+    FDwfDigitalSpiClockSet(hdwf, dioSCK);
+    FDwfDigitalSpiDataSet(hdwf, 0, dioSDIO);
+    FDwfDigitalSpiModeSet(hdwf, 0);
+    FDwfDigitalSpiOrderSet(hdwf, 1);
+    FDwfDigitalSpiSelect(hdwf, dioCS, 0);
+    Sleep(1.0);
+    FDwfDigitalSpiWrite16(hdwf, 0, 16, zero, 1);
     
     // enable both analog channels
     FDwfAnalogInChannelEnableSet(hdwf, 0, true);
@@ -170,6 +187,8 @@ void initAD()
     
     // set 10V pk2pk range
     FDwfAnalogInChannelRangeSet(hdwf, -1, SUPPLY_VOLTAGE * 2);
+    
+    ad2_enableMasterSwitches(false);
 }
 
 
