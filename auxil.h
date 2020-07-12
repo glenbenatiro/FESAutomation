@@ -284,9 +284,9 @@ void generateHTMLFile()
 					file << "-";
 			}
 			else if(r == (electrodeOffset - 1))
-				file << "<b>-</b>";
+				file << "<b>E2</b>";
 			else
-				file << "X";
+				file << " ";
 			file << "</td>" << "\n";			
 		}
 		file << "</tr>" << "\n";
@@ -314,7 +314,7 @@ void generateHTMLFile()
 	file.close();
 	
 	// open html file for viewing
-	sprintf(fileName, "results\\%s_%d_HTML.html", name, electrodeOffset);
+	sprintf(fileName, "results\\html\\%s_%d_HTML.html", name, electrodeOffset);
    	ShellExecute(NULL, "open", fileName, NULL, NULL, SW_SHOWNORMAL);
 }
 
@@ -374,19 +374,16 @@ void generateCSVFile()
 
 bool isADConnected()
 {
+	char szError[512] = { 0 };
+	
 	// close if something else opened AD previously
 	FDwfDeviceCloseAll();
 	
-	char szError[512] = { 0 };
-    char szDeviceName[32];
-    int prevDuty = 0;
-	
     if(!FDwfDeviceOpen(-1, &hdwf)) {
         FDwfGetLastErrorMsg(szError);
-
-        printf("\nDevice open failed\n%s", szError);
         
-        cout << "\n\n";
+        printf("Device open failed:\n%s", szError);
+        cout << "\n";
         cout << "Press any key to exit.";
         
         getch();
@@ -412,7 +409,8 @@ void rampUpDown(float seconds, unsigned char* rampDirection)
 {
 	// switch for waveform generator output
 	FDwfAnalogOutConfigure(hdwf, analogChannel, true);
-	for (int i = 0; i <= steps; i++) {
+	
+	for(int i = 0; i <= steps; i++) {
         FDwfDigitalSpiWrite(hdwf, 0, 8, rampDirection, 1);
         Sleep(seconds / steps);
     }

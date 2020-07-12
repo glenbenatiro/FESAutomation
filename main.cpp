@@ -36,8 +36,8 @@ class selectionMatrix {
 
 // --- RUN-TIME GLOBAL VARIABLES ---
 ofstream file;
-char name[50]; 							// to store name of test subject, also used as title of resulting .txt file 
-char temp[50]; 							// to temporarily store file of sprintf operations
+char name[50]; 							// 
+char temp[50]; 							// temporary variable for sprintf operations
 
 int e2Size = 0;
 int sFreq[5];
